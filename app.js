@@ -52,23 +52,23 @@ app.post("/html-to-png", async (req, res) => {
     }
 
     const browser = await chromium.launch({
-        chromiumSandbox: false,
-      });
-      const page = await browser.newPage({
-        viewport: { width: 368, height: 570 },
-        deviceScaleFactor: 3,
-      });
+      chromiumSandbox: false,
+    });
+    const page = await browser.newPage({
+      viewport: { width: 368, height: 570 },
+      deviceScaleFactor: 3,
+    });
 
-      await page.setContent(req.body.html);
+    await page.setContent(req.body.html);
 
-      const image = await page.screenshot({
-        type: "png",
-      });
+    const image = await page.screenshot({
+      type: "png",
+    });
 
-      await browser.close();
+    await browser.close();
 
-      res.contentType("image/png");
-      res.send(image);
+    res.contentType("image/png");
+    res.send(image);
   } catch (error) {
     console.log(error);
 
