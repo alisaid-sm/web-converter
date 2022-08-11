@@ -16,23 +16,28 @@ app.get("/", (req, res) => {
   res.send("Hello from Web Converter :)");
 });
 
-app.get("/url-to-pdf", async (req, res) => {
+app.post("/url-to-pdf", async (req, res) => {
   try {
-    if (!req.query.url) {
-      return res.status(400).json("Query url is required");
+    if (!req.body.url) {
+      return res.status(400).json("Body url is required");
     }
 
-    console.log(req.query.url);
+    if (!req.body.format) {
+      req.body.format = "a4";
+    }
 
     const browser = await chromium.launch({
       chromiumSandbox: false,
     });
     const page = await browser.newPage();
     // 'https://mauju-invoice-staging.herokuapp.com/pdf/iT5u5sQgcv'
-    await page.goto(req.query.url);
+    await page.goto(req.body.url);
     await page.waitForTimeout(3000);
 
-    const pdf = await page.pdf({ format: "a4", printBackground: true });
+    const pdf = await page.pdf({
+      format: req.body.format,
+      printBackground: true,
+    });
 
     await browser.close();
 
@@ -51,11 +56,19 @@ app.post("/html-to-png", async (req, res) => {
       res.status(400).json("Body html is required");
     }
 
+    if (!req.body.width) {
+      req.body.width = 368;
+    }
+
+    if (!req.body.height) {
+      req.body.height = 570;
+    }
+
     const browser = await chromium.launch({
       chromiumSandbox: false,
     });
     const page = await browser.newPage({
-      viewport: { width: 368, height: 570 },
+      viewport: { width: req.body.width, height: req.body.height },
       deviceScaleFactor: 3,
     });
 
