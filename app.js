@@ -33,7 +33,7 @@ app.post("/url-to-pdf", async (req, res) => {
     });
     const page = await browser.newPage();
     // 'https://mauju-invoice-staging.herokuapp.com/pdf/iT5u5sQgcv'
-    await page.goto(req.body.url);
+    await page.goto(req.body.url, { waitUntil: "networkidle" });
     await page.waitForTimeout(3000);
 
     const pdf = await page.pdf({
