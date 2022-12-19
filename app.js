@@ -12,7 +12,29 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-app.use(morgan("tiny"));
+app.use(
+  morgan(
+    function (tokens, req, res) {
+      const log = {
+        method: tokens.method(req, res),
+        url: tokens.url(req, res),
+        status: tokens.status(req, res),
+        contentLength: tokens.res(req, res, "content-length"),
+        responseTime: tokens["response-time"](req, res) + "ms",
+        remoteAddr: tokens["remote-addr"](req, res),
+        userAgent: tokens["user-agent"](req, res),
+      };
+
+      return `${new Date().toISOString()} method=${log.method} url=${log.url} status=${log.status} contentLength=${log.contentLength} responseTime=${log.responseTime}`;
+    },
+    {
+      stream: {
+        write: (message) =>
+          console.log(message.substring(0, message.lastIndexOf("\n"))),
+      },
+    }
+  )
+);
 
 app.get("/", (req, res) => {
   res.send("Hello from Web Converter :)");
@@ -33,8 +55,8 @@ app.post("/url-to-pdf", async (req, res) => {
     });
     const page = await browser.newPage();
     // 'https://mauju-invoice-staging.herokuapp.com/pdf/iT5u5sQgcv'
-    await page.goto(req.body.url, { waitUntil: "networkidle" });
-    await page.waitForTimeout(3000);
+    await page.goto(req.body.url);
+    await page.waitForTimeout(2000);
 
     const pdf = await page.pdf({
       format: req.body.format,
