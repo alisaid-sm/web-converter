@@ -1,32 +1,20 @@
-# on push, pull_request to develop & master
-name: CI/CD
-on:
-  push:
-    branches: [master]
+name: CD
+on: 
+  workflow_dispatch:
 
 jobs:
-  test-and-deploy:
+  CD:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Cache node_modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Use NodeJS
-        uses: actions/setup-node@v1
-        with:
-          node-version: "16.x"
-      - run: npm ci
+      - uses: actions/checkout@v4
       - name: Build & Save Docker Image
+        if: github.ref == 'refs/heads/master'
         run: |
           docker build . -t web-converter
           mkdir build
           docker save web-converter | gzip > build/web-converter.tar.gz
-      - name: Deploy Docker Image
+      - name: Deploy Docker Image to Server
+        if: github.ref == 'refs/heads/master'
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -34,12 +22,13 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: build/
           server-dir: web-converter/
-      - name: Load Docker Images
+      - name: Load Docker Images on Server
+        if: github.ref == 'refs/heads/master'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd ../home/mauju.com/docker-images/web-converter
